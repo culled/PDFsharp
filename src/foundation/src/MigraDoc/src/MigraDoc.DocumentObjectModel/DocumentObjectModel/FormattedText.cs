@@ -468,6 +468,11 @@ namespace MigraDoc.DocumentObjectModel
         }
 
         /// <summary>
+        /// Gets or sets the shading color property.
+        /// </summary>
+        public Color ShadingColor { get; set; } = Color.Empty;
+
+        /// <summary>
         /// Gets or sets the superscript property.
         /// </summary>
         public bool Superscript

@@ -280,6 +280,7 @@ namespace MigraDoc.Rendering
                 _reMeasureLine = true;
             var nextTabStop = GetNextTabStop();
             _savedWordWidth = 0;
+            _savedNumFittingCharacters = 0;
             if (nextTabStop == null)
                 return FormatResult.NewLine;
 
@@ -1238,9 +1239,17 @@ namespace MigraDoc.Rendering
             if (font.Subscript || font.Superscript)
                 xFont = FontHandler.ToSubSuperFont(xFont);
 
+            XUnitPt wordWidth = MeasureString(word);
+
+            // Draw shading behind the text
+            if (CurrentFontShading != Color.Empty)
+            {
+                XColor shadingColor = ColorHelper.ToXColor(CurrentFontShading, font.Document.UseCmykColor);
+                _gfx.DrawRectangle(new XSolidBrush(shadingColor), _currentXPosition, _currentYPosition, wordWidth, _currentVerticalInfo.Height.Point);
+            }
+
             if (CurrentBrush != null)
                 _gfx.DrawString(word, xFont, CurrentBrush, _currentXPosition, CurrentBaselinePosition);
-            XUnitPt wordWidth = MeasureString(word);
             RenderUnderline(wordWidth, true);
             RealizeHyperlink(wordWidth);
             _currentXPosition += wordWidth;
@@ -1866,10 +1875,19 @@ namespace MigraDoc.Rendering
         FormatResult FormatWord(string word, Rectangle fittingRect)
         {
             XUnitPt width = MeasureString(word);
-            return FormatAsWord(width, fittingRect);
+            var result = FormatAsWord(width, fittingRect);
+
+            if(result == FormatResult.NewLine)
+            {
+                var remainingSpace = fittingRect.X + fittingRect.Width - RightIndent - Tolerance - _currentXPosition;
+                _savedNumFittingCharacters = MeasureNumFittingCharacters(word, CurrentFont, remainingSpace.Point);
+            }
+
+            return result;
         }
 
         XUnitPt _savedWordWidth = 0;
+        int _savedNumFittingCharacters = 0;
 
         /// <summary>
         /// When rendering a justified paragraph, only the part after the last tab stop needs remeasuring.
@@ -2026,6 +2044,35 @@ namespace MigraDoc.Rendering
             return width;
         }
 
+        /// <summary>
+        /// This is a special version of MeasureString that returns the width of the
+        /// portion of the string that fits.
+        /// </summary>
+        public int MeasureNumFittingCharacters(string text, XFont font, double desWidth)
+        {
+            //Start with the whole text string
+            int numFittingCharacters = text.Length;
+            XSize size;
+            string partialText;
+
+            do
+            {
+                //Measure the string up until the numFittingCharacters index
+                partialText = text.Substring(0, numFittingCharacters);
+                // size = FontHelper.MeasureString(partialText, font, XStringFormats.Default);
+                size = _gfx.MeasureString(partialText, font, XStringFormats.Default);
+
+                //If the string is less than our desired width, that is the number of characters that fit in the width
+                if (size.Width < desWidth)
+                    break;
+
+                //Go back one character
+                numFittingCharacters--;
+            } while (numFittingCharacters > 1);
+
+            return numFittingCharacters;
+        }
+
         XUnitPt GetSpaceWidth(Character character)
         {
             XUnitPt width = character.SymbolName switch
@@ -2163,6 +2210,7 @@ namespace MigraDoc.Rendering
                 return FormatResult.Ignore;
 
             _savedWordWidth = 0;
+            _savedNumFittingCharacters = 0;
             XUnitPt width;
             var currentFont = CurrentFont;
             if (_lastFont == currentFont)
@@ -2192,6 +2240,7 @@ namespace MigraDoc.Rendering
                 _currentLeaf = _currentLeaf?.GetNextLeaf();
 
             _savedWordWidth = 0;
+            _savedNumFittingCharacters = 0;
             _currentLineEndsWithLineBreak = true;
             return FormatResult.NewLine;
         }
@@ -2289,11 +2338,29 @@ namespace MigraDoc.Rendering
         {
             if (_currentLeaf != null)
             {
+                if (_savedNumFittingCharacters > 0 && _currentLeaf.Current is Text currentText)
+                {
+                    var parent = DocumentRelations.GetParentOfType(currentText, typeof(FormattedText)) as FormattedText;
+                    Debug.Assert(parent != null);
+
+                    int index = parent.Elements.IndexOf(currentText);
+                    Debug.Assert(index != -1);
+
+                    string lineText = currentText.Content.Substring(0, _savedNumFittingCharacters);
+                    string nextLineText = currentText.Content.Substring(_savedNumFittingCharacters);
+
+                    currentText.Content = lineText;
+
+                    parent.Elements.InsertObject(index + 1, new Text(nextLineText));
+                    _savedWordWidth = MeasureString(lineText);
+                }
+
                 if (_savedWordWidth > 0)
                 {
                     _currentWordsWidth = _savedWordWidth;
                     _currentLineWidth = _savedWordWidth;
                 }
+
                 _currentLeaf = _currentLeaf.GetNextLeaf();
                 _currentYPosition += _currentVerticalInfo.Height;
                 _currentVerticalInfo = new VerticalLineInfo();
@@ -2326,6 +2393,7 @@ namespace MigraDoc.Rendering
             _currentWordsWidth = 0;
             _currentLineWidth = 0;
             _currentLineEndsWithLineBreak = false;
+            _savedNumFittingCharacters = 0;
         }
 
         /// <summary>
@@ -2388,6 +2456,7 @@ namespace MigraDoc.Rendering
             lineInfo.LineEndsWithLineBreak = _currentLineEndsWithLineBreak;
 
             _savedWordWidth = 0;
+            _savedNumFittingCharacters = 0;
             _reMeasureLine = false;
             ((ParagraphFormatInfo)_renderInfo.FormatInfo).AddLineInfo(lineInfo);
         }
@@ -2616,6 +2685,22 @@ namespace MigraDoc.Rendering
             }
         }
 #endif
+        private Color CurrentFontShading
+        {
+            get
+            {
+                if (_currentLeaf != null)
+                {
+                    var parent = DocumentRelations.GetParent(_currentLeaf.Current);
+                    parent = DocumentRelations.GetParent(parent);
+
+                    if (parent is FormattedText ft)
+                        return ft.ShadingColor;
+                }
+
+                return Colors.Transparent;
+            }
+        }
 
         /// <summary>
         /// Help function to receive a line height on empty paragraphs.
@@ -2675,6 +2760,13 @@ namespace MigraDoc.Rendering
         void EndUnderline(XPen pen, XUnitPt xPosition)
         {
             XUnitPt yPosition = CurrentBaselinePosition;
+
+            //if (CurrentFontShading != Color.Empty)
+            //{
+            //    XColor shadingColor = ColorHelper.ToXColor(CurrentFontShading, CurrentDomFont.Document.UseCmykColor);
+            //    _gfx.DrawRectangle(new XSolidBrush(shadingColor), _underlineStartPos, _currentYPosition, xPosition - _underlineStartPos, _currentVerticalInfo.Height.Point);
+            //}
+
             yPosition += 0.33 * _currentVerticalInfo.Descent;
             _gfx.DrawLine(pen, _underlineStartPos, yPosition, xPosition, yPosition);
         }
