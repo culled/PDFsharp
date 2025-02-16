@@ -1207,6 +1207,13 @@ namespace MigraDoc.Rendering
             if (!IgnoreBlank())
             {
                 XUnitPt wordDistance = CurrentWordDistance;
+
+                if (CurrentFontShading != Color.Empty)
+                {
+                    XColor shadingColor = ColorHelper.ToXColor(CurrentFontShading, CurrentDomFont.Document.UseCmykColor);
+                    _gfx.DrawRectangle(new XSolidBrush(shadingColor), _currentXPosition, _currentYPosition, wordDistance, _currentVerticalInfo.Height.Point);
+                }
+
                 RenderUnderline(wordDistance, false);
                 RealizeHyperlink(wordDistance);
                 _currentXPosition += wordDistance;
@@ -2760,12 +2767,6 @@ namespace MigraDoc.Rendering
         void EndUnderline(XPen pen, XUnitPt xPosition)
         {
             XUnitPt yPosition = CurrentBaselinePosition;
-
-            //if (CurrentFontShading != Color.Empty)
-            //{
-            //    XColor shadingColor = ColorHelper.ToXColor(CurrentFontShading, CurrentDomFont.Document.UseCmykColor);
-            //    _gfx.DrawRectangle(new XSolidBrush(shadingColor), _underlineStartPos, _currentYPosition, xPosition - _underlineStartPos, _currentVerticalInfo.Height.Point);
-            //}
 
             yPosition += 0.33 * _currentVerticalInfo.Descent;
             _gfx.DrawLine(pen, _underlineStartPos, yPosition, xPosition, yPosition);
