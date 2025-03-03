@@ -193,7 +193,9 @@ namespace MigraDoc.DocumentObjectModel
                     Underline = Underline.None,
                     Color = Colors.Black,
                     Subscript = false,
-                    Superscript = false
+                    Superscript = false,
+                    Strikethrough = false,
+                    ShadingColor = Color.Empty
                 },
                 ParagraphFormat =
                 {

@@ -459,6 +459,15 @@ namespace MigraDoc.DocumentObjectModel
         }
 
         /// <summary>
+        /// Gets or sets the strikethrough property.
+        /// </summary>
+        public bool Strikethrough
+        {
+            get => Font.Strikethrough;
+            set => Font.Strikethrough = value;
+        }
+
+        /// <summary>
         /// Gets or sets the color property.
         /// </summary>
         public Color Color
@@ -470,7 +479,11 @@ namespace MigraDoc.DocumentObjectModel
         /// <summary>
         /// Gets or sets the shading color property.
         /// </summary>
-        public Color ShadingColor { get; set; } = Color.Empty;
+        public Color ShadingColor
+        {
+            get => Font.ShadingColor;
+            set => Font.ShadingColor = value;
+        }
 
         /// <summary>
         /// Gets or sets the superscript property.
@@ -642,10 +655,30 @@ namespace MigraDoc.DocumentObjectModel
             /// Gets or sets the internal nullable implementation value of the enclosing document object property.
             /// See enclosing document object class for documentation of this property.
             /// </summary>
+            public bool? Strikethrough
+            {
+                get => Font?.Strikethrough;
+                set => Owner.Font.Values.Strikethrough = value;
+            }
+
+            /// <summary>
+            /// Gets or sets the internal nullable implementation value of the enclosing document object property.
+            /// See enclosing document object class for documentation of this property.
+            /// </summary>
             public Color? Color
             {
                 get => Font?.Color;
                 set => Owner.Font.Values.Color = DocumentObjectModel.Color.MakeNullIfEmpty(value);
+            }
+
+            /// <summary>
+            /// Gets or sets the internal nullable implementation value of the enclosing document object property.
+            /// See enclosing document object class for documentation of this property.
+            /// </summary>
+            public Color? ShadingColor
+            {
+                get => Font?.ShadingColor;
+                set => Owner.Font.Values.ShadingColor = DocumentObjectModel.Color.MakeNullIfEmpty(value);
             }
 
             /// <summary>

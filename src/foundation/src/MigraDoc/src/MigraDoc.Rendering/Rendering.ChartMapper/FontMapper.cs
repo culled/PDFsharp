@@ -26,6 +26,18 @@ namespace MigraDoc.Rendering.ChartMapper
                 font.Color = ColorHelper.ToXColor(domFont.Color, domFont.Document.UseCmykColor);
 #endif
             }
+
+            if(domFont.ShadingColor.IsEmpty)
+                font.ShadingColor = XColor.Empty;
+            else
+            {
+#if noCMYK
+                font.ShadingColor = XColor.FromArgb((int)domFont.ShadingColor.Argb);
+#else
+                Debug.Assert(domFont.Document != null, "domFont.Document != null");
+                font.ShadingColor = ColorHelper.ToXColor(domFont.ShadingColor, domFont.Document.UseCmykColor);
+#endif
+            }
             font.Italic = domFont.Italic;
             if (!domFont.Values.Name.IsValueNullOrEmpty())
                 font.Name = domFont.Name;
@@ -35,6 +47,7 @@ namespace MigraDoc.Rendering.ChartMapper
             font.Subscript = domFont.Subscript;
             font.Superscript = domFont.Superscript;
             font.Underline = (Underline)domFont.Underline;
+            font.Strikethrough = domFont.Strikethrough;
         }
 
         internal static void Map(Font font, DocumentObjectModel.Document domDocument, string domStyleName)

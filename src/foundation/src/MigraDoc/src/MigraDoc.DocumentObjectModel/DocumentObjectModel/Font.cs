@@ -83,8 +83,14 @@ namespace MigraDoc.DocumentObjectModel
             if (Values.Underline is not null && (refFont == null || font.Underline != refFont.Underline))
                 Underline = font.Underline;
 
+            if (font.Values.Strikethrough is not null && (refFont == null || font.Strikethrough != refFont.Strikethrough))
+                Strikethrough = font.Strikethrough;
+
             if (!Values.Color.IsValueNullOrEmpty() && (refFont == null || font.Color.Argb != refFont.Color.Argb))
                 Color = font.Color;
+
+            if (!Values.ShadingColor.IsValueNullOrEmpty() && (refFont == null || font.ShadingColor.Argb != refFont.ShadingColor.Argb))
+                ShadingColor = font.ShadingColor;
         }
 
         /// <summary>
@@ -114,8 +120,14 @@ namespace MigraDoc.DocumentObjectModel
             if (font.Values.Underline is not null)
                 Underline = font.Underline;
 
+            if (font.Values.Strikethrough is not null)
+                Strikethrough = font.Strikethrough;
+
             if (!font.Values.Color.IsValueNullOrEmpty())
                 Color = font.Color;
+
+            if (!font.Values.ShadingColor.IsValueNullOrEmpty())
+                ShadingColor = font.ShadingColor;
         }
 
         /// <summary>
@@ -154,6 +166,15 @@ namespace MigraDoc.DocumentObjectModel
             set => Values.Italic = value;
         }
 
+        /// <summary>
+        /// Gets or sets the strikethrough property.
+        /// </summary>
+        public bool Strikethrough
+        {
+            get => Values.Strikethrough ?? false;
+            set => Values.Strikethrough = value;
+        }
+
         // TODO_OLD Implement Strikethrough for PDFsharp and MigraDoc.
         // THHO4STLA Implementation for Strikethrough in the forum: http://forum.pdfsharp.net/viewtopic.php?p=4636#p4636
         /// <summary>
@@ -172,6 +193,15 @@ namespace MigraDoc.DocumentObjectModel
         {
             get => Values.Color ?? Color.Empty;
             set => Values.Color = value;
+        }
+
+        /// <summary>
+        /// Gets or sets the shading color property.
+        /// </summary>
+        public Color ShadingColor
+        {
+            get => Values.ShadingColor ?? Color.Empty;
+            set => Values.ShadingColor = value;
         }
 
         /// <summary>
@@ -242,6 +272,8 @@ namespace MigraDoc.DocumentObjectModel
                 fp |= FontProperties.Underline;
             if (!Values.Color.IsValueNullOrEmpty())
                 fp |= FontProperties.Color;
+            if (!Values.ShadingColor.IsValueNullOrEmpty())
+                fp |= FontProperties.ShadingColor;
             if (Values.Superscript is not null)
                 fp |= FontProperties.Superscript;
             if (Values.Subscript is not null)
@@ -292,10 +324,24 @@ namespace MigraDoc.DocumentObjectModel
                         return;
                     }
 
+                    if (notNull == FontProperties.Strikethrough && Strikethrough)
+                    {
+                        // Only Strikethrough is set.
+                        serializer.Write("\\strike");
+                        return;
+                    }
+
                     if (notNull == FontProperties.Color)
                     {
                         // Only Color is set.
                         serializer.Write(Invariant($"\\fontcolor({Color})"));
+                        return;
+                    }
+
+                    if (notNull == FontProperties.ShadingColor)
+                    {
+                        // Only Color is set.
+                        serializer.Write(Invariant($"\\fontshading({ShadingColor})"));
                         return;
                     }
                 }
@@ -325,6 +371,9 @@ namespace MigraDoc.DocumentObjectModel
                 if (Values.Underline is not null)
                     serializer.WriteSimpleAttribute("Underline", Underline);
 
+                if (Values.Strikethrough is not null)
+                    serializer.WriteSimpleAttribute("Strikethrough", Strikethrough);
+
                 if (Values.Superscript is not null)
                     serializer.WriteSimpleAttribute("Superscript", Superscript);
 
@@ -333,6 +382,9 @@ namespace MigraDoc.DocumentObjectModel
 
                 if (!Values.Color.IsValueNullOrEmpty())
                     serializer.WriteSimpleAttribute("Color", Color);
+
+                if (!Values.ShadingColor.IsValueNullOrEmpty())
+                    serializer.WriteSimpleAttribute("ShadingColor", ShadingColor);
                 serializer.Write("]");
             }
             else
@@ -364,6 +416,9 @@ namespace MigraDoc.DocumentObjectModel
                 if (Values.Italic is not null && (font == null || Italic != font.Italic || font.Values.Italic is null))
                     serializer.WriteSimpleAttribute("Italic", Italic);
 
+                if (Values.Strikethrough is not null && (font == null || Strikethrough != font.Strikethrough || font.Values.Strikethrough is null))
+                    serializer.WriteSimpleAttribute("Strikethrough", Strikethrough);
+
                 if (Values.Underline is not null && (font == null || Underline != font.Underline || font.Values.Underline is null))
                     serializer.WriteSimpleAttribute("Underline", Underline);
 
@@ -375,6 +430,10 @@ namespace MigraDoc.DocumentObjectModel
 
                 if (!Values.Color.IsValueNullOrEmpty() && (font == null || Color.Argb != font.Color.Argb))// && Color.RGB != Color.Transparent.RGB)
                     serializer.WriteSimpleAttribute("Color", Color);
+
+                if (!Values.ShadingColor.IsValueNullOrEmpty() && (font == null || ShadingColor.Argb != font.ShadingColor.Argb))// && Color.RGB != Color.Transparent.RGB)
+                    serializer.WriteSimpleAttribute("ShadingColor", ShadingColor);
+
                 serializer.EndContent(pos);
             }
         }
@@ -433,12 +492,29 @@ namespace MigraDoc.DocumentObjectModel
             /// Gets or sets the internal nullable implementation value of the enclosing document object property.
             /// See enclosing document object class for documentation of this property.
             /// </summary>
+            public bool? Strikethrough { get; set; }
+
+            /// <summary>
+            /// Gets or sets the internal nullable implementation value of the enclosing document object property.
+            /// See enclosing document object class for documentation of this property.
+            /// </summary>
             public Color? Color
             {
                 get => _color;
                 set => _color = DocumentObjectModel.Color.MakeNullIfEmpty(value);
             }
             Color? _color;
+
+            /// <summary>
+            /// Gets or sets the internal nullable implementation value of the enclosing document object property.
+            /// See enclosing document object class for documentation of this property.
+            /// </summary>
+            public Color? ShadingColor
+            {
+                get => _shadingColor;
+                set => _shadingColor = DocumentObjectModel.Color.MakeNullIfEmpty(value);
+            }
+            Color? _shadingColor;
 
             /// <summary>
             /// Gets or sets the internal nullable implementation value of the enclosing document object property.

@@ -66,9 +66,19 @@ namespace PdfSharp.Charting
         public Underline Underline { get; set; }
 
         /// <summary>
+        /// Gets or sets the strikethrough property.
+        /// </summary>
+        public bool Strikethrough { get; set; }
+
+        /// <summary>
         /// Gets or sets the color property.
         /// </summary>
         public XColor Color { get; set; } = XColor.Empty;
+
+        /// <summary>
+        /// Gets or sets the shading color property.
+        /// </summary>
+        public XColor ShadingColor { get; set; } = XColor.Empty;
 
         /// <summary>
         /// Gets or sets the superscript property.
