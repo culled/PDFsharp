@@ -1,7 +1,7 @@
 ﻿// PDFsharp - A .NET library for processing PDF
 // See the LICENSE file in the solution root for more information.
 
-using PdfSharp.WPFonts;
+//using PdfSharp.WPFonts;
 using PdfSharp.Fonts;
 
 namespace PdfSharp.Quality
@@ -64,12 +64,12 @@ namespace PdfSharp.Quality
         {
             return faceName switch
             {
-                "SegoeWPLight#" => FontDataHelper.SegoeWPLight,
-                "SegoeWPSemilight#" => FontDataHelper.SegoeWPSemilight,
-                "SegoeWP#" => FontDataHelper.SegoeWP,
-                "SegoeWP#b" => FontDataHelper.SegoeWPBold,
-                "SegoeWPSemiBold#" => FontDataHelper.SegoeWPSemibold,
-                "SegoeWPBlack#" => FontDataHelper.SegoeWPBlack,
+                //"SegoeWPLight#" => FontDataHelper.SegoeWPLight,
+                //"SegoeWPSemilight#" => FontDataHelper.SegoeWPSemilight,
+                //"SegoeWP#" => FontDataHelper.SegoeWP,
+                //"SegoeWP#b" => FontDataHelper.SegoeWPBold,
+                //"SegoeWPSemiBold#" => FontDataHelper.SegoeWPSemibold,
+                //"SegoeWPBlack#" => FontDataHelper.SegoeWPBlack,
                 _ => throw new ArgumentException($"'{faceName}' is not a known face name.")
             };
         }
